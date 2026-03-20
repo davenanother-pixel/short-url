@@ -1,0 +1,63 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+  
+  api-gateway:
+    build: ./gateway
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - shortener-service
+      - analytics-service
+      - storage-service
+  
+  shortener-service:
+    build: ./shortener
+    ports:
+      - "8081:8081"
+  
+  analytics-service:
+    build: ./analytics
+    ports:
+      - "8082:8082"
+  
+  storage-service:
+    build: ./storage
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - redis
+  
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: url_shortener
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+  
+  assembly-optimizer:
+    build: ./assembly
+    volumes:
+      - ./assembly:/app
+    command: tail -f /dev/null
+
+volumes:
+  postgres_data:
